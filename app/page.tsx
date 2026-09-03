@@ -146,8 +146,9 @@ export default function Home() {
       <audio ref={musicRef} src="/pressed-ferns.mp3" loop preload="metadata" />
       <div className="audio-controls">
         <button className="sound-btn" onClick={() => {
-          if (sound) { playSound("click"); stopMusic(); setSound(false); }
-          else { setSound(true); if (screen === "game") void startMusic(true); }
+          const musicIsPlaying = Boolean(musicRef.current && !musicRef.current.paused);
+          if (sound && musicIsPlaying) { playSound("click"); stopMusic(); setSound(false); }
+          else { setSound(true); void startMusic(true); }
         }} aria-label={sound ? "Mute sound and music" : "Turn sound and music on"}>
           {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
         </button>
@@ -157,7 +158,7 @@ export default function Home() {
               const nextVolume = Number(event.target.value);
               setVolume(nextVolume);
               if (musicRef.current) musicRef.current.volume = nextVolume;
-              if (nextVolume > 0 && !sound) { setSound(true); if (screen === "game") void startMusic(true); }
+              if (nextVolume > 0 && !sound) { setSound(true); void startMusic(true); }
             }} />
         </label>
       </div>

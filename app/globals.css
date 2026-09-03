@@ -65,9 +65,9 @@ html,body{height:100%;overflow:hidden}
 .screen-start .start-letter>:not(.primary-btn){visibility:hidden}
 .screen-start .start-letter .primary-btn{position:absolute;left:50%;top:62.3%;width:30%;height:11%;min-width:0;padding:0;opacity:0;transform:translate(-50%,-50%);box-shadow:none}
 .screen-start .start-letter .primary-btn:hover{transform:translate(-50%,-50%);opacity:.08;background:#f0cf83}
-.screen-start .audio-controls{top:3.1%;right:2.4%;width:6.2vw;height:11.5vh;min-width:76px;min-height:76px;padding:0;border:0;background:transparent;box-shadow:none}
-.screen-start .audio-controls .sound-btn{width:100%;height:100%;border:0;background:transparent;box-shadow:none;color:transparent}
-.screen-start .volume-control{display:none}
+.screen-start .audio-controls{top:2.3%;right:1.7%;width:clamp(220px,15vw,285px);height:clamp(74px,9vh,94px);padding:7px 18px 7px 7px;gap:15px;border:2px solid #aa8951;border-radius:999px;background:linear-gradient(145deg,#30241beF,#17100cef);box-shadow:inset 0 0 0 2px #0b0806,0 7px 20px #0009}
+.screen-start .audio-controls .sound-btn{width:clamp(58px,4vw,74px);height:clamp(58px,4vw,74px);flex:0 0 clamp(58px,4vw,74px);border:2px solid #b4945c;background:radial-gradient(circle at 38% 32%,#4b392a,#201711 72%);box-shadow:inset 0 0 0 4px #17100c,0 2px 7px #0008;color:#e6d1a1}
+.screen-start .volume-control{display:flex;width:auto;flex:1}
 @media(max-aspect-ratio:16/10){.screen-start{background-size:contain}.screen-start .start-letter .primary-btn{top:62%;width:34%}}
 
 /* Pressed Fern final palette and botanical details */
