@@ -134,7 +134,7 @@ export default function Home() {
   };
 
   return (
-    <main className={`site-shell ${dragging ? "is-dragging" : ""}`}
+    <main className={`site-shell screen-${screen} ${dragging ? "is-dragging" : ""}`}
       onPointerMove={(event) => setThread(current => current ? { ...current, cursorX: event.clientX + 5, cursorY: event.clientY + 7 } : null)}>
       <div className="grain" />
       {thread && (
@@ -143,7 +143,7 @@ export default function Home() {
           <circle cx={thread.targetX} cy={thread.targetY} r="3" />
         </svg>
       )}
-      <audio ref={musicRef} src="https://adjective-bloom-game.fav2374.chatgpt.site/pressed-ferns.mp3" loop preload="metadata" />
+      <audio ref={musicRef} src="/pressed-ferns.mp3" loop preload="metadata" />
       <div className="audio-controls">
         <button className="sound-btn" onClick={() => {
           if (sound) { playSound("click"); stopMusic(); setSound(false); }
