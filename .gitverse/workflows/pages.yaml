@@ -2,12 +2,13 @@ name: GitVerse Pages Static Export
 
 on:
   push:
-    branches: ["main", "gitverse-pages-fix"]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -16,16 +17,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build static export
-        run: npm run build
+      # The app itself is client-only. Build it with Next's static exporter
+      # instead of the Vinext/Cloudflare worker build used by the preview environment.
+      - name: Build static site
+        run: npx next build
 
-      - name: Fix public asset URLs for project Pages path
+      # Public assets in the original app use root-relative URLs. GitVerse Pages
+      # serves this repository below /adjectivebloom, so rewrite those references
+      # in the generated static files before publishing.
+      - name: Fix public asset URLs
         run: |
-          find dist/client -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | \
+          find out -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | \
             xargs -0 sed -i \
               -e 's#"/photos-webp/#"/adjectivebloom/photos-webp/#g' \
               -e 's#"/growth-stages/#"/adjectivebloom/growth-stages/#g' \
@@ -36,23 +43,28 @@ jobs:
               -e 's#"/quill-cursor.png"#"/adjectivebloom/quill-cursor.png"#g'
 
       - name: Verify static entrypoint
-        run: |
-          test -f dist/client/index.html
-          echo "Static export ready:"
-          ls -la dist/client | head -40
+        run: test -f out/index.html
 
-      - name: Upload Pages artifact
-        uses: gitverse/upload-pages-artifact@v1.0.0
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
         with:
-          path: dist/client
+          path: './out'
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '>=1.23'
+
       - name: Deploy to GitVerse Pages
         id: deployment
-        uses: gitverse/deploy-pages@v1.0.0
+        uses: actions/deploy-pages@v1
+        with:
+          artifact_name: gitverse-pages
 
       - name: Print deploy URL
         run: echo "page_url = ${{ steps.deployment.outputs.page_url }}"
