@@ -17,6 +17,17 @@ function shuffled<T>(items: readonly T[]) {
 
 const photoFor = (word: string) => `/photos-webp/${word}.webp`;
 
+function growthStageFor(correctAnswers: number) {
+  if (correctAnswers <= 1) return 0;
+  if (correctAnswers === 2) return 1;
+  if (correctAnswers === 3) return 2;
+  if (correctAnswers <= 5) return 3;
+  if (correctAnswers <= 7) return 4;
+  if (correctAnswers <= 9) return 5;
+  if (correctAnswers <= 12) return 6;
+  return 7;
+}
+
 export default function Home() {
   const [screen, setScreen] = useState<"start" | "game" | "finish">("start");
   const [round, setRound] = useState(0);
@@ -36,9 +47,14 @@ export default function Home() {
   const [volume, setVolume] = useState(.38);
   const audioRef = useRef<AudioContext | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
+  const growthStage = growthStageFor(matched.length);
 
   useEffect(() => {
-    const sharedAssets = ["/desk-background.webp", "/envelope-fern-closed-opt.webp", "/envelope-fern-open-opt.webp"];
+    const sharedAssets = [
+      "/desk-background.webp", "/envelope-fern-closed-opt.webp", "/envelope-fern-open-opt.webp",
+      ...Array.from({ length: 8 }, (_, index) => `/growth-stages/stage-${index}.webp`),
+      "/growth-stages/seed.webp",
+    ];
     sharedAssets.forEach(src => {
       const image = new Image();
       image.src = src;
@@ -239,8 +255,10 @@ export default function Home() {
 
             <aside className="garden-card">
               <div className="plant-stage">
-                <img src="/peony-plant.webp" alt="" className="growing-plant"
-                  style={{ clipPath: `inset(${78 - (matched.length / PAIRS.length) * 78}% 0 0 0)` }} />
+                <img key={growthStage} src={`/growth-stages/stage-${growthStage}.webp`}
+                  alt={growthStage === 0 ? "A terracotta pot ready for a seed" : `Peony growth stage ${growthStage} of 7`}
+                  className="growing-plant growth-stage-image" />
+                {matched.length === 1 && <img src="/growth-stages/seed.webp" alt="" className="falling-seed" />}
                 {streak >= 3 && <Sparkles className="sparkle" size={26} />}
               </div>
             </aside>
@@ -251,7 +269,7 @@ export default function Home() {
 
       {screen === "finish" && (
         <section className="finish-letter enter">
-          <div className="finish-plant"><img src="/peony-plant.webp" alt="A fully grown potted peony" /></div>
+          <div className="finish-plant"><img src="/growth-stages/stage-7.webp" alt="A fully grown potted peony" /></div>
           <p className="eyebrow">All fourteen letters delivered</p>
           <h1>Perfectly<br /><em>addressed!</em></h1>
           <p className="intro">Every opposite found. Every envelope sealed.<br />The conservatory is in full bloom.</p>
