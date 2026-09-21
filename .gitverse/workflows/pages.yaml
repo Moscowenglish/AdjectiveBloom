@@ -1,0 +1,58 @@
+name: GitVerse Pages Static Export
+
+on:
+  push:
+    branches: ["main", "gitverse-pages-fix"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static export
+        run: npm run build
+
+      - name: Fix public asset URLs for project Pages path
+        run: |
+          find dist/client -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | \
+            xargs -0 sed -i \
+              -e 's#"/photos-webp/#"/adjectivebloom/photos-webp/#g' \
+              -e 's#"/growth-stages/#"/adjectivebloom/growth-stages/#g' \
+              -e 's#"/desk-background.webp"#"/adjectivebloom/desk-background.webp"#g' \
+              -e 's#"/envelope-fern-closed-opt.webp"#"/adjectivebloom/envelope-fern-closed-opt.webp"#g' \
+              -e 's#"/envelope-fern-open-opt.webp"#"/adjectivebloom/envelope-fern-open-opt.webp"#g' \
+              -e 's#"/pressed-ferns.mp3"#"/adjectivebloom/pressed-ferns.mp3"#g' \
+              -e 's#"/quill-cursor.png"#"/adjectivebloom/quill-cursor.png"#g'
+
+      - name: Verify static entrypoint
+        run: |
+          test -f dist/client/index.html
+          echo "Static export ready:"
+          ls -la dist/client | head -40
+
+      - name: Upload Pages artifact
+        uses: gitverse/upload-pages-artifact@v1.0.0
+        with:
+          path: dist/client
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitVerse Pages
+        id: deployment
+        uses: gitverse/deploy-pages@v1.0.0
+
+      - name: Print deploy URL
+        run: echo "page_url = ${{ steps.deployment.outputs.page_url }}"
