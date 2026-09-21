@@ -24,4 +24,4 @@ jobs:
         run: |
           test -n "$GITVERSE_TOKEN" || { echo "GITVERSE_TOKEN secret is missing"; exit 1; }
           git remote add gitverse "https://oauth2:${GITVERSE_TOKEN}@gitverse.ru/Moscowenglish/AdjectiveBloom.git"
-          git push gitverse HEAD:main --force-with-lease
+          git push gitverse HEAD:main --force
