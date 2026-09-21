@@ -1,0 +1,27 @@
+name: Sync to GitVerse
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: sync-to-gitverse
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push main branch to GitVerse
+        env:
+          GITVERSE_TOKEN: ${{ secrets.GITVERSE_TOKEN }}
+        run: |
+          test -n "$GITVERSE_TOKEN" || { echo "GITVERSE_TOKEN secret is missing"; exit 1; }
+          git remote add gitverse "https://oauth2:${GITVERSE_TOKEN}@gitverse.ru/Moscowenglish/AdjectiveBloom.git"
+          git push gitverse HEAD:main --force-with-lease
