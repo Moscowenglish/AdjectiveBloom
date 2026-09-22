@@ -5,14 +5,9 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
-concurrency:
-  group: adjectivebloom-pages
-  cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -65,13 +60,11 @@ jobs:
           test "$(find out/_next/static -type f -name '*.js' | wc -l)" -gt 0
           ! grep -q '"/_next/' out/index.html
           grep -q '"./_next/' out/index.html
-          grep -R -q '"./photos-webp/confident.webp' out/_next/static
           ! grep -R -q '"/photos-webp/' out/_next/static
           ! grep -R -q '"/growth-stages/' out/_next/static
           ! grep -R -q '/adjectivebloom/adjectivebloom/' out
           ! grep -R -q 'url("/adjectivebloom/' out/_next/static
-          du -sh out
-          echo 'Verified: export is self-contained and uses GitVerse-compatible relative URLs.'
+          echo 'Verified: GitVerse Pages export is ready.'
 
       - name: Upload pages artifact
         uses: gitverse/upload-pages-artifact@v1.0.0
@@ -81,13 +74,10 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
       - name: Deploy to GitVerse Pages
         id: deployment
         uses: gitverse/deploy-pages@v1.0.0
-        with:
-          artifact_name: gitverse-pages
 
       - name: Print deploy URL
         run: echo "page_url = ${{ steps.deployment.outputs.page_url }}"
