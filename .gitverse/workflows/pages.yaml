@@ -5,6 +5,10 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
+concurrency:
+  group: adjectivebloom-pages
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,28 +28,27 @@ jobs:
       - name: Build static site
         run: npx next build
 
-      # Next's basePath fixes framework chunks, but raw /public URLs used by
-      # img/audio/CSS still need the project prefix on GitVerse Pages.
-      - name: Fix runtime public asset URLs
+      - name: Verify exported game
         run: |
-          find out -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | \
-            xargs -0 sed -i \
-              -e 's#"/photos-webp/#"/adjectivebloom/photos-webp/#g' \
-              -e 's#"/growth-stages/#"/adjectivebloom/growth-stages/#g' \
-              -e 's#"/desk-background.webp"#"/adjectivebloom/desk-background.webp"#g' \
-              -e 's#"/envelope-fern-closed-opt.webp"#"/adjectivebloom/envelope-fern-closed-opt.webp"#g' \
-              -e 's#"/envelope-fern-open-opt.webp"#"/adjectivebloom/envelope-fern-open-opt.webp"#g' \
-              -e 's#"/pressed-ferns.mp3"#"/adjectivebloom/pressed-ferns.mp3"#g' \
-              -e 's#"/quill-cursor.png"#"/adjectivebloom/quill-cursor.png"#g'
-
-      - name: Verify static entrypoint
-        run: |
+          set -eux
           test -f out/index.html
           test -f out/desk-background.webp
           test -f out/envelope-fern-closed-opt.webp
+          test -f out/envelope-fern-open-opt.webp
+          test -f out/pressed-ferns.mp3
+          test -f out/quill-cursor.png
           test -d out/photos-webp
           test -d out/growth-stages
-          echo "Static export and game assets verified"
+          test "$(find out/photos-webp -maxdepth 1 -type f -name '*.webp' | wc -l)" -eq 14
+          test "$(find out/growth-stages -maxdepth 1 -type f -name '*.webp' | wc -l)" -ge 9
+          grep -R -q '/adjectivebloom/photos-webp/confident.webp' out
+          grep -R -q '/adjectivebloom/desk-background.webp' out
+          if grep -R -q '/adjectivebloom/adjectivebloom/' out; then
+            echo 'ERROR: double basePath found in export'
+            grep -R -n '/adjectivebloom/adjectivebloom/' out | head -20
+            exit 1
+          fi
+          echo 'Static export verified: all game assets and paths are present.'
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
