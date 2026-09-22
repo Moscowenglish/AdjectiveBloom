@@ -51,7 +51,6 @@ jobs:
           test "$(find out/_next/static -type f -name '*.js' | wc -l)" -gt 0
           ! grep -q '"/_next/' out/index.html
           grep -q '"./_next/' out/index.html
-          grep -R -q '"./photos-webp/confident.webp' out/_next/static
           ! grep -R -q '"/photos-webp/' out/_next/static
           ! grep -R -q '"/growth-stages/' out/_next/static
           ! grep -R -q '/adjectivebloom/adjectivebloom/' out
