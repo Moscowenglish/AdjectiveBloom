@@ -41,14 +41,20 @@ jobs:
           test -d out/growth-stages
           test "$(find out/photos-webp -maxdepth 1 -type f -name '*.webp' | wc -l)" -eq 14
           test "$(find out/growth-stages -maxdepth 1 -type f -name '*.webp' | wc -l)" -ge 9
+          test "$(find out/_next/static -type f -name '*.js' | wc -l)" -gt 0
           grep -R -q '/adjectivebloom/photos-webp/confident.webp' out
           grep -R -q '/adjectivebloom/desk-background.webp' out
+          grep -q '/adjectivebloom/_next/static/' out/index.html
           if grep -R -q '/adjectivebloom/adjectivebloom/' out; then
             echo 'ERROR: double basePath found in export'
             grep -R -n '/adjectivebloom/adjectivebloom/' out | head -20
             exit 1
           fi
-          echo 'Static export verified: all game assets and paths are present.'
+          if grep -q '/adjectivebloom//_next/' out/index.html; then
+            echo 'ERROR: malformed assetPrefix found in index.html'
+            exit 1
+          fi
+          echo 'Static export verified: HTML, JS and all game assets are present.'
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
