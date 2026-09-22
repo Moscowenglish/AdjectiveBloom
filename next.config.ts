@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,
   basePath: "/adjectivebloom",
-  assetPrefix: "/adjectivebloom/",
+  assetPrefix: "/adjectivebloom",
   images: {
     unoptimized: true,
   },
