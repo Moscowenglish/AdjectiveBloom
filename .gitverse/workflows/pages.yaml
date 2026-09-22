@@ -24,11 +24,28 @@ jobs:
       - name: Build static site
         run: npx next build
 
+      # Next's basePath fixes framework chunks, but raw /public URLs used by
+      # img/audio/CSS still need the project prefix on GitVerse Pages.
+      - name: Fix runtime public asset URLs
+        run: |
+          find out -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | \
+            xargs -0 sed -i \
+              -e 's#"/photos-webp/#"/adjectivebloom/photos-webp/#g' \
+              -e 's#"/growth-stages/#"/adjectivebloom/growth-stages/#g' \
+              -e 's#"/desk-background.webp"#"/adjectivebloom/desk-background.webp"#g' \
+              -e 's#"/envelope-fern-closed-opt.webp"#"/adjectivebloom/envelope-fern-closed-opt.webp"#g' \
+              -e 's#"/envelope-fern-open-opt.webp"#"/adjectivebloom/envelope-fern-open-opt.webp"#g' \
+              -e 's#"/pressed-ferns.mp3"#"/adjectivebloom/pressed-ferns.mp3"#g' \
+              -e 's#"/quill-cursor.png"#"/adjectivebloom/quill-cursor.png"#g'
+
       - name: Verify static entrypoint
         run: |
           test -f out/index.html
-          echo "Publishing index.html at artifact root"
-          find out -maxdepth 2 -type f | head -40
+          test -f out/desk-background.webp
+          test -f out/envelope-fern-closed-opt.webp
+          test -d out/photos-webp
+          test -d out/growth-stages
+          echo "Static export and game assets verified"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
