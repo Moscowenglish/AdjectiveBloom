@@ -21,25 +21,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # The app itself is client-only. Build it with Next's static exporter
-      # instead of the Vinext/Cloudflare worker build used by the preview environment.
       - name: Build static site
         run: npx next build
-
-      # Public assets in the original app use root-relative URLs. GitVerse Pages
-      # serves this repository below /adjectivebloom, so rewrite those references
-      # in the generated static files before publishing.
-      - name: Fix public asset URLs
-        run: |
-          find out -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | \
-            xargs -0 sed -i \
-              -e 's#"/photos-webp/#"/adjectivebloom/photos-webp/#g' \
-              -e 's#"/growth-stages/#"/adjectivebloom/growth-stages/#g' \
-              -e 's#"/desk-background.webp"#"/adjectivebloom/desk-background.webp"#g' \
-              -e 's#"/envelope-fern-closed-opt.webp"#"/adjectivebloom/envelope-fern-closed-opt.webp"#g' \
-              -e 's#"/envelope-fern-open-opt.webp"#"/adjectivebloom/envelope-fern-open-opt.webp"#g' \
-              -e 's#"/pressed-ferns.mp3"#"/adjectivebloom/pressed-ferns.mp3"#g' \
-              -e 's#"/quill-cursor.png"#"/adjectivebloom/quill-cursor.png"#g'
 
       - name: Verify static entrypoint
         run: test -f out/index.html
