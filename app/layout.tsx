@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "./gitverse-fixes.css";
 
 export const metadata: Metadata = {
   title: "Adjective Bloom — Match the Opposites",
