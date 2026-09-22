@@ -1,0 +1,66 @@
+name: Verify static export
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx next build
+      - name: Apply GitVerse Pages URL transform
+        run: |
+          set -euxo pipefail
+          find out -type f -name '*.html' -print0 | xargs -0 sed -i \
+            -e 's#"/_next/#"./_next/#g' \
+            -e 's#"/photos-webp/#"./photos-webp/#g' \
+            -e 's#"/growth-stages/#"./growth-stages/#g' \
+            -e 's#"/desk-background.webp"#"./desk-background.webp"#g' \
+            -e 's#"/envelope-fern-closed-opt.webp"#"./envelope-fern-closed-opt.webp"#g' \
+            -e 's#"/envelope-fern-open-opt.webp"#"./envelope-fern-open-opt.webp"#g' \
+            -e 's#"/pressed-ferns.mp3"#"./pressed-ferns.mp3"#g' \
+            -e 's#"/quill-cursor.png"#"./quill-cursor.png"#g'
+          find out/_next/static -type f -name '*.js' -print0 | xargs -0 sed -i \
+            -e 's#"/photos-webp/#"./photos-webp/#g' \
+            -e 's#"/growth-stages/#"./growth-stages/#g' \
+            -e 's#"/desk-background.webp"#"./desk-background.webp"#g' \
+            -e 's#"/envelope-fern-closed-opt.webp"#"./envelope-fern-closed-opt.webp"#g' \
+            -e 's#"/envelope-fern-open-opt.webp"#"./envelope-fern-open-opt.webp"#g' \
+            -e 's#"/pressed-ferns.mp3"#"./pressed-ferns.mp3"#g' \
+            -e 's#"/quill-cursor.png"#"./quill-cursor.png"#g'
+          find out/_next/static -type f -name '*.css' -print0 | xargs -0 sed -i \
+            -e 's#url("/adjectivebloom/quill-cursor.png")#url("../../../quill-cursor.png")#g' \
+            -e 's#url("/adjectivebloom/desk-background.webp")#url("../../../desk-background.webp")#g' \
+            -e 's#url(/adjectivebloom/quill-cursor.png)#url(../../../quill-cursor.png)#g' \
+            -e 's#url(/adjectivebloom/desk-background.webp)#url(../../../desk-background.webp)#g'
+      - name: Deep verify artifact
+        run: |
+          set -euxo pipefail
+          test -f out/index.html
+          test -f out/desk-background.webp
+          test -f out/envelope-fern-closed-opt.webp
+          test -f out/envelope-fern-open-opt.webp
+          test -f out/pressed-ferns.mp3
+          test -f out/quill-cursor.png
+          test "$(find out/photos-webp -maxdepth 1 -type f -name '*.webp' | wc -l)" -eq 14
+          test "$(find out/growth-stages -maxdepth 1 -type f -name '*.webp' | wc -l)" -ge 9
+          test "$(find out/_next/static -type f -name '*.js' | wc -l)" -gt 0
+          ! grep -q '"/_next/' out/index.html
+          grep -q '"./_next/' out/index.html
+          grep -R -q '"./photos-webp/confident.webp' out/_next/static
+          ! grep -R -q '"/photos-webp/' out/_next/static
+          ! grep -R -q '"/growth-stages/' out/_next/static
+          ! grep -R -q '/adjectivebloom/adjectivebloom/' out
+          echo "Deep verification passed"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-out
+          path: out
