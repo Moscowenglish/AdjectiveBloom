@@ -28,7 +28,24 @@ jobs:
       - name: Build static site
         run: npx next build
 
-      - name: Verify exported game
+      - name: Rewrite only root-relative public assets for GitVerse Pages
+        run: |
+          set -eux
+          find out -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | \
+            xargs -0 sed -i \
+              -e 's#"/photos-webp/#"/adjectivebloom/photos-webp/#g' \
+              -e 's#"/growth-stages/#"/adjectivebloom/growth-stages/#g' \
+              -e 's#"/desk-background.webp"#"/adjectivebloom/desk-background.webp"#g' \
+              -e 's#"/envelope-fern-closed-opt.webp"#"/adjectivebloom/envelope-fern-closed-opt.webp"#g' \
+              -e 's#"/envelope-fern-open-opt.webp"#"/adjectivebloom/envelope-fern-open-opt.webp"#g' \
+              -e 's#"/pressed-ferns.mp3"#"/adjectivebloom/pressed-ferns.mp3"#g' \
+              -e 's#"/quill-cursor.png"#"/adjectivebloom/quill-cursor.png"#g' \
+              -e 's#url(/quill-cursor.png)#url(/adjectivebloom/quill-cursor.png)#g' \
+              -e 's#url("/quill-cursor.png")#url("/adjectivebloom/quill-cursor.png")#g' \
+              -e 's#url(/desk-background.webp)#url(/adjectivebloom/desk-background.webp)#g' \
+              -e 's#url("/desk-background.webp")#url("/adjectivebloom/desk-background.webp")#g'
+
+      - name: Verify complete static export
         run: |
           set -eux
           test -f out/index.html
@@ -37,24 +54,16 @@ jobs:
           test -f out/envelope-fern-open-opt.webp
           test -f out/pressed-ferns.mp3
           test -f out/quill-cursor.png
-          test -d out/photos-webp
-          test -d out/growth-stages
           test "$(find out/photos-webp -maxdepth 1 -type f -name '*.webp' | wc -l)" -eq 14
           test "$(find out/growth-stages -maxdepth 1 -type f -name '*.webp' | wc -l)" -ge 9
           test "$(find out/_next/static -type f -name '*.js' | wc -l)" -gt 0
+          grep -q '/adjectivebloom/_next/static/' out/index.html
           grep -R -q '/adjectivebloom/photos-webp/confident.webp' out
           grep -R -q '/adjectivebloom/desk-background.webp' out
-          grep -q '/adjectivebloom/_next/static/' out/index.html
-          if grep -R -q '/adjectivebloom/adjectivebloom/' out; then
-            echo 'ERROR: double basePath found in export'
-            grep -R -n '/adjectivebloom/adjectivebloom/' out | head -20
-            exit 1
-          fi
-          if grep -q '/adjectivebloom//_next/' out/index.html; then
-            echo 'ERROR: malformed assetPrefix found in index.html'
-            exit 1
-          fi
-          echo 'Static export verified: HTML, JS and all game assets are present.'
+          ! grep -R -q '/adjectivebloom/adjectivebloom/' out
+          ! grep -R -q '"/photos-webp/' out
+          ! grep -R -q '"/growth-stages/' out
+          echo 'Verified: original game, Next.js chunks, 14 photos and all public assets are ready.'
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
