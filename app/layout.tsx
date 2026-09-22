@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./gitverse-fixes.css";
 
 export const metadata: Metadata = {
   title: "Adjective Bloom — Match the Opposites",
@@ -7,28 +8,22 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Adjective Bloom",
     description: "Match the opposites. Grow your word garden.",
-    images: [{ url: "/og.png", width: 1536, height: 1024 }],
+    images: [{ url: "/adjectivebloom/og.png", width: 1536, height: 1024 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Adjective Bloom",
     description: "Match the opposites. Grow your word garden.",
-    images: ["/og.png"],
+    images: ["/adjectivebloom/og.png"],
   },
-  other: {
-    "codex-preview": "development",
-  },
+  other: { "codex-preview": "development" },
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: "/adjectivebloom/favicon.svg",
+    shortcut: "/adjectivebloom/favicon.svg",
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body className="antialiased">{children}</body>
