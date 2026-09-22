@@ -15,7 +15,11 @@ function shuffled<T>(items: readonly T[]) {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
-const photoFor = (word: string) => `/photos-webp/${word}.webp`;
+// GitVerse Pages serves this repository below /adjectivebloom/.
+// Relative runtime URLs keep public assets inside that project path instead of
+// accidentally requesting them from the domain root.
+const asset = (path: string) => `./${path.replace(/^\//, "")}`;
+const photoFor = (word: string) => asset(`photos-webp/${word}.webp`);
 
 function growthStageFor(correctAnswers: number) {
   if (correctAnswers <= 1) return 0;
@@ -51,9 +55,9 @@ export default function Home() {
 
   useEffect(() => {
     const sharedAssets = [
-      "/desk-background.webp", "/envelope-fern-closed-opt.webp", "/envelope-fern-open-opt.webp",
-      ...Array.from({ length: 8 }, (_, index) => `/growth-stages/stage-${index}.webp`),
-      "/growth-stages/seed.webp",
+      asset("desk-background.webp"), asset("envelope-fern-closed-opt.webp"), asset("envelope-fern-open-opt.webp"),
+      ...Array.from({ length: 8 }, (_, index) => asset(`growth-stages/stage-${index}.webp`)),
+      asset("growth-stages/seed.webp"),
     ];
     sharedAssets.forEach(src => {
       const image = new Image();
@@ -159,7 +163,7 @@ export default function Home() {
           <circle cx={thread.targetX} cy={thread.targetY} r="3" />
         </svg>
       )}
-      <audio ref={musicRef} src="/pressed-ferns.mp3" loop preload="metadata" />
+      <audio ref={musicRef} src={asset("pressed-ferns.mp3")} loop preload="metadata" />
       <div className="audio-controls">
         <button className="sound-btn" onClick={() => {
           const musicIsPlaying = Boolean(musicRef.current && !musicRef.current.paused);
@@ -178,105 +182,28 @@ export default function Home() {
             }} />
         </label>
       </div>
-
-      {screen === "start" && (
-        <section className="start-letter enter">
-          <div className="start-props" aria-hidden="true">
-            <div className="start-polaroid"><img src={photoFor("confident")} alt="" /><span>confident</span></div>
-            <img className="start-envelope" src="/envelope-fern-closed-opt.webp" alt="" />
-            <img className="start-quill" src="/quill-cursor.png" alt="" />
+      <section className="content">
+        {screen === "start" && <button className="start-button" onClick={() => { setScreen("game"); void startMusic(); }}>Start</button>}
+        {screen === "game" && <>
+          <header><h1>Match the opposites</h1><p>Drag a Polaroid into its opposite envelope.</p></header>
+          <div className="progress">{matched.length} / {PAIRS.length} pairs</div>
+          <div className="cards">
+            {activeCards.map((word, index) => <button key={word} className={`polaroid ${matched.includes(word) ? "matched" : ""}`}
+              draggable={!matched.includes(word)} onDragStart={() => beginCard(word)} onClick={() => beginCard(word)}>
+              <img src={photoFor(word)} alt="" /><span>{word}</span><small>0{index + 1}</small>
+            </button>)}
           </div>
-          <div className="wax-seal">A</div>
-          <p className="eyebrow">The Academy Mailroom · Special Delivery</p>
-          <h1>Match the<br /><em>opposites</em></h1>
-          <div className="rule" />
-          <p className="intro">Deliver every Polaroid to the envelope<br />marked with its opposite adjective.</p>
-          <div className="preview-mail" aria-hidden="true">
-            <div className="mini-photo">confident</div><span>→</span><div className="mini-envelope">shy</div>
+          <div className="envelopes">
+            {activeEnvelopes.map(target => <button key={target} className={`envelope ${wrongEnvelope === target ? "wrong" : ""}`}
+              onDragOver={event => event.preventDefault()} onDrop={() => tryMatch(target)} onClick={() => tryMatch(target)}>
+              <span>{target}</span>
+            </button>)}
           </div>
-          <button className="primary-btn" onClick={() => { playSound("click"); void startMusic(); setScreen("game"); }}>Open the mailroom <span>→</span></button>
-          <p className="tiny-note">14 deliveries · no timer · take your time</p>
-        </section>
-      )}
-
-      {screen === "game" && (
-        <section className="mailroom enter">
-          <header className="game-header">
-            <div><h2>Match the opposites</h2><p>Drag a Polaroid into its opposite envelope.</p></div>
-          </header>
-          <div className="counter"><strong>{matched.length}</strong><span>/ {PAIRS.length} pairs</span><i><b style={{width:`${matched.length/PAIRS.length*100}%`}} /></i><Sparkles size={22}/></div>
-          <div className="desk-layout">
-            <section className="polaroid-tray">
-              <div className="polaroid-grid">
-                {activeCards.map((word, i) => (
-                  <button key={word} draggable={!matched.includes(word)}
-                    onDragStart={(e) => { e.dataTransfer.setData("text/plain", word); beginCard(word); }}
-                    onDragEnd={() => setDragging(null)}
-                    onClick={() => { if (!matched.includes(word)) beginCard(word); }}
-                    disabled={matched.includes(word)}
-                    className={`polaroid angle-${i%4} ${selected === word ? "selected" : ""} ${matched.includes(word) ? "sent" : ""}`}>
-                    <span className="photo-window">
-                      <img src={photoFor(word)} alt="" draggable={false} loading="eager" decoding="async" />
-                      <i>{String(batchIndex * 4 + i + 1).padStart(2,"0")}</i>
-                    </span>
-                    <strong>{word}</strong>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="envelope-tray">
-              <div className="envelope-grid">
-                {activeEnvelopes.map((word, i) => {
-                  const source = PAIRS.find(([, b]) => b === word)?.[0] ?? "";
-                  const sealed = matched.includes(source);
-                  return <button key={word}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => { e.preventDefault(); tryMatch(word, e.dataTransfer.getData("text/plain")); }}
-                    onClick={() => tryMatch(word)}
-                    onPointerEnter={(event) => {
-                      if (sealed) return;
-                      const rect = event.currentTarget.getBoundingClientRect();
-                      setThread({ cursorX: event.clientX + 5, cursorY: event.clientY + 7, targetX: rect.left + rect.width / 2, targetY: rect.top + rect.height * .68 });
-                    }}
-                    onPointerLeave={() => setThread(null)}
-                    disabled={sealed}
-                    className={`envelope angle-${(i+2)%4} ${selected ? "ready" : ""} ${wrongEnvelope === word ? "wrong" : ""} ${sealed ? "sealed" : ""}`}>
-                    <span className="envelope-art" aria-hidden="true">
-                      <img className="envelope-closed" src="/envelope-fern-closed-opt.webp" alt="" decoding="async" />
-                      <img className="envelope-open" src="/envelope-fern-open-opt.webp" alt="" decoding="async" />
-                    </span>
-                    <span className="envelope-word">{word}</span>
-                    {sealed && <span className="seal-mark">✓</span>}
-                  </button>;
-                })}
-              </div>
-            </section>
-
-            <aside className="garden-card">
-              <div className="plant-stage">
-                <img key={growthStage} src={`/growth-stages/stage-${growthStage}.webp`}
-                  alt={growthStage === 0 ? "A terracotta pot ready for a seed" : `Peony growth stage ${growthStage} of 7`}
-                  className="growing-plant growth-stage-image" />
-                {matched.length === 1 && <img src="/growth-stages/seed.webp" alt="" className="falling-seed" />}
-                {streak >= 3 && <Sparkles className="sparkle" size={26} />}
-              </div>
-            </aside>
-          </div>
-          <div className="feedback-plaque"><span>{feedback}</span><small>{streak > 1 ? `✦ ${streak} in a row` : "Special delivery"}</small></div>
-        </section>
-      )}
-
-      {screen === "finish" && (
-        <section className="finish-letter enter">
-          <div className="finish-plant"><img src="/growth-stages/stage-7.webp" alt="A fully grown potted peony" /></div>
-          <p className="eyebrow">All fourteen letters delivered</p>
-          <h1>Perfectly<br /><em>addressed!</em></h1>
-          <p className="intro">Every opposite found. Every envelope sealed.<br />The conservatory is in full bloom.</p>
-          <div className="result-note"><Sparkles size={17} /> Best delivery streak: <strong>{bestStreak}</strong></div>
-          <button className="primary-btn" onClick={reset}><RotateCcw size={17} /> Play again</button>
-        </section>
-      )}
+          <div className="plant"><img src={asset(`growth-stages/stage-${growthStage}.webp`)} alt="Growing plant" /></div>
+          <div className="feedback">{feedback}</div>
+        </>}
+        {screen === "finish" && <div className="finish"><Sparkles /><h1>Adjective Bloom!</h1><p>All {PAIRS.length} pairs delivered.</p><p>Best streak: {bestStreak}</p><button onClick={reset}><RotateCcw /> Play again</button></div>}
+      </section>
     </main>
   );
 }
