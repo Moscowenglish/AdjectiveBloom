@@ -28,22 +28,43 @@ jobs:
       - name: Build static site
         run: npx next build
 
-      - name: Normalize public asset URLs for project Pages
+      # GitVerse Pages project sites require relative resource URLs.
+      # Convert Next's root-relative runtime URLs to paths relative to the
+      # published project root. CSS lives in _next/static/css, so its public
+      # asset URLs need to walk three levels back to the site root.
+      - name: Make exported URLs relative for GitVerse Pages
         run: |
           set -euxo pipefail
-          find out -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | \
-            xargs -0 sed -i \
-              -e 's#"/photos-webp/#"/adjectivebloom/photos-webp/#g' \
-              -e 's#"/growth-stages/#"/adjectivebloom/growth-stages/#g' \
-              -e 's#"/desk-background.webp"#"/adjectivebloom/desk-background.webp"#g' \
-              -e 's#"/envelope-fern-closed-opt.webp"#"/adjectivebloom/envelope-fern-closed-opt.webp"#g' \
-              -e 's#"/envelope-fern-open-opt.webp"#"/adjectivebloom/envelope-fern-open-opt.webp"#g' \
-              -e 's#"/pressed-ferns.mp3"#"/adjectivebloom/pressed-ferns.mp3"#g' \
-              -e 's#"/quill-cursor.png"#"/adjectivebloom/quill-cursor.png"#g' \
-              -e 's#url(/quill-cursor.png)#url(/adjectivebloom/quill-cursor.png)#g' \
-              -e 's#url("/quill-cursor.png")#url("/adjectivebloom/quill-cursor.png")#g' \
-              -e 's#url(/desk-background.webp)#url(/adjectivebloom/desk-background.webp)#g' \
-              -e 's#url("/desk-background.webp")#url("/adjectivebloom/desk-background.webp")#g'
+
+          # HTML entrypoint: Next chunks/styles must resolve below the project URL.
+          find out -type f -name '*.html' -print0 | xargs -0 sed -i \
+            -e 's#"/_next/#"./_next/#g' \
+            -e 's#"/photos-webp/#"./photos-webp/#g' \
+            -e 's#"/growth-stages/#"./growth-stages/#g' \
+            -e 's#"/desk-background.webp"#"./desk-background.webp"#g' \
+            -e 's#"/envelope-fern-closed-opt.webp"#"./envelope-fern-closed-opt.webp"#g' \
+            -e 's#"/envelope-fern-open-opt.webp"#"./envelope-fern-open-opt.webp"#g' \
+            -e 's#"/pressed-ferns.mp3"#"./pressed-ferns.mp3"#g' \
+            -e 's#"/quill-cursor.png"#"./quill-cursor.png"#g'
+
+          # Client bundle contains the public image/audio strings used by the game.
+          find out/_next/static -type f -name '*.js' -print0 | xargs -0 sed -i \
+            -e 's#"/photos-webp/#"./photos-webp/#g' \
+            -e 's#"/growth-stages/#"./growth-stages/#g' \
+            -e 's#"/desk-background.webp"#"./desk-background.webp"#g' \
+            -e 's#"/envelope-fern-closed-opt.webp"#"./envelope-fern-closed-opt.webp"#g' \
+            -e 's#"/envelope-fern-open-opt.webp"#"./envelope-fern-open-opt.webp"#g' \
+            -e 's#"/pressed-ferns.mp3"#"./pressed-ferns.mp3"#g' \
+            -e 's#"/quill-cursor.png"#"./quill-cursor.png"#g'
+
+          # The source stylesheet currently contains the former project prefix.
+          # Emitted CSS is served from _next/static/css/, hence ../../../ reaches
+          # the root of the published artifact.
+          find out/_next/static -type f -name '*.css' -print0 | xargs -0 sed -i \
+            -e 's#url("/adjectivebloom/quill-cursor.png")#url("../../../quill-cursor.png")#g' \
+            -e 's#url("/adjectivebloom/desk-background.webp")#url("../../../desk-background.webp")#g' \
+            -e 's#url(/adjectivebloom/quill-cursor.png)#url(../../../quill-cursor.png)#g' \
+            -e 's#url(/adjectivebloom/desk-background.webp)#url(../../../desk-background.webp)#g'
 
       - name: Verify deployable export
         run: |
@@ -57,14 +78,22 @@ jobs:
           test "$(find out/photos-webp -maxdepth 1 -type f -name '*.webp' | wc -l)" -eq 14
           test "$(find out/growth-stages -maxdepth 1 -type f -name '*.webp' | wc -l)" -ge 9
           test "$(find out/_next/static -type f -name '*.js' | wc -l)" -gt 0
-          grep -q '/adjectivebloom/_next/static/' out/index.html
-          grep -R -q '/adjectivebloom/photos-webp/confident.webp' out
-          grep -R -q '/adjectivebloom/desk-background.webp' out
+
+          # Entry point must not contain root-absolute Next resource URLs.
+          ! grep -q '"/_next/' out/index.html
+          grep -q '"./_next/' out/index.html
+
+          # Game runtime must use project-relative public assets.
+          grep -R -q '"./photos-webp/confident.webp' out/_next/static
+          ! grep -R -q '"/photos-webp/' out/_next/static
+          ! grep -R -q '"/growth-stages/' out/_next/static
+
+          # No stale project-prefix or accidental double-prefix paths may remain.
           ! grep -R -q '/adjectivebloom/adjectivebloom/' out
-          ! grep -R -q '"/photos-webp/' out
-          ! grep -R -q '"/growth-stages/' out
+          ! grep -R -q 'url("/adjectivebloom/' out/_next/static
+
           du -sh out
-          echo 'Static export verified.'
+          echo 'Verified: export is self-contained and uses GitVerse-compatible relative URLs.'
 
       - name: Upload pages artifact
         uses: gitverse/upload-pages-artifact@v1.0.0
