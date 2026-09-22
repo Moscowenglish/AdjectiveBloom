@@ -23,14 +23,14 @@ jobs:
           node-version: "22"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build static site
         run: npx next build
 
-      - name: Rewrite only root-relative public assets for GitVerse Pages
+      - name: Normalize public asset URLs for project Pages
         run: |
-          set -eux
+          set -euxo pipefail
           find out -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | \
             xargs -0 sed -i \
               -e 's#"/photos-webp/#"/adjectivebloom/photos-webp/#g' \
@@ -45,9 +45,9 @@ jobs:
               -e 's#url(/desk-background.webp)#url(/adjectivebloom/desk-background.webp)#g' \
               -e 's#url("/desk-background.webp")#url("/adjectivebloom/desk-background.webp")#g'
 
-      - name: Verify complete static export
+      - name: Verify deployable export
         run: |
-          set -eux
+          set -euxo pipefail
           test -f out/index.html
           test -f out/desk-background.webp
           test -f out/envelope-fern-closed-opt.webp
@@ -63,28 +63,22 @@ jobs:
           ! grep -R -q '/adjectivebloom/adjectivebloom/' out
           ! grep -R -q '"/photos-webp/' out
           ! grep -R -q '"/growth-stages/' out
-          echo 'Verified: original game, Next.js chunks, 14 photos and all public assets are ready.'
+          du -sh out
+          echo 'Static export verified.'
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+      - name: Upload pages artifact
+        uses: gitverse/upload-pages-artifact@v1.0.0
         with:
-          path: './out'
+          path: out
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '>=1.23'
-
       - name: Deploy to GitVerse Pages
         id: deployment
-        uses: actions/deploy-pages@v1
-        with:
-          artifact_name: gitverse-pages
+        uses: gitverse/deploy-pages@v1.0.0
 
       - name: Print deploy URL
         run: echo "page_url = ${{ steps.deployment.outputs.page_url }}"
