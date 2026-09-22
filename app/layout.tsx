@@ -7,22 +7,28 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Adjective Bloom",
     description: "Match the opposites. Grow your word garden.",
-    images: [{ url: "/adjectivebloom/og.png", width: 1536, height: 1024 }],
+    images: [{ url: "/og.png", width: 1536, height: 1024 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Adjective Bloom",
     description: "Match the opposites. Grow your word garden.",
-    images: ["/adjectivebloom/og.png"],
+    images: ["/og.png"],
   },
-  other: { "codex-preview": "development" },
+  other: {
+    "codex-preview": "development",
+  },
   icons: {
-    icon: "/adjectivebloom/favicon.svg",
-    shortcut: "/adjectivebloom/favicon.svg",
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en">
       <body className="antialiased">{children}</body>
