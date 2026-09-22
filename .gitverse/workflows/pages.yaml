@@ -24,7 +24,7 @@ jobs:
       - name: Build static site
         run: npx next build
 
-      - name: Prepare GitVerse project path
+      - name: Fix public asset URLs
         run: |
           find out -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print0 | \
             xargs -0 sed -i \
@@ -35,16 +35,17 @@ jobs:
               -e 's#"/envelope-fern-open-opt.webp"#"/adjectivebloom/envelope-fern-open-opt.webp"#g' \
               -e 's#"/pressed-ferns.mp3"#"/adjectivebloom/pressed-ferns.mp3"#g' \
               -e 's#"/quill-cursor.png"#"/adjectivebloom/quill-cursor.png"#g'
-          mkdir -p publish/adjectivebloom
-          cp -a out/. publish/adjectivebloom/
 
       - name: Verify static entrypoint
-        run: test -f publish/adjectivebloom/index.html
+        run: |
+          test -f out/index.html
+          echo "Publishing index.html at artifact root"
+          find out -maxdepth 2 -type f | head -40
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          path: './publish'
+          path: './out'
 
   deploy:
     needs: build
