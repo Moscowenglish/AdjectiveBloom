@@ -25,28 +25,24 @@ jobs:
         run: npx next build
 
       - name: Verify static entrypoint
-        run: test -f out/index.html
+        run: |
+          test -f out/index.html
+          echo "Static export ready:"
+          ls -la out | head -50
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+      - name: Upload pages artifact
+        uses: gitverse/upload-pages-artifact@v1.0.0
         with:
-          path: './out'
+          path: out
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '>=1.23'
-
       - name: Deploy to GitVerse Pages
         id: deployment
-        uses: actions/deploy-pages@v1
-        with:
-          artifact_name: gitverse-pages
+        uses: gitverse/deploy-pages@v1.0.0
 
       - name: Print deploy URL
         run: echo "page_url = ${{ steps.deployment.outputs.page_url }}"
