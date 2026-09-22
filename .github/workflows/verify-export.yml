@@ -25,7 +25,6 @@ jobs:
             -e 's#"/desk-background.webp"#"./desk-background.webp"#g' \
             -e 's#"/envelope-fern-closed-opt.webp"#"./envelope-fern-closed-opt.webp"#g' \
             -e 's#"/envelope-fern-open-opt.webp"#"./envelope-fern-open-opt.webp"#g' \
-            -e 's#"/pressed-ferns.mp3"#"./pressed-ferns.mp3"#g' \
             -e 's#"/quill-cursor.png"#"./quill-cursor.png"#g'
           find out/_next/static -type f -name '*.js' -print0 | xargs -0 sed -i \
             -e 's#"/photos-webp/#"./photos-webp/#g' \
@@ -33,7 +32,6 @@ jobs:
             -e 's#"/desk-background.webp"#"./desk-background.webp"#g' \
             -e 's#"/envelope-fern-closed-opt.webp"#"./envelope-fern-closed-opt.webp"#g' \
             -e 's#"/envelope-fern-open-opt.webp"#"./envelope-fern-open-opt.webp"#g' \
-            -e 's#"/pressed-ferns.mp3"#"./pressed-ferns.mp3"#g' \
             -e 's#"/quill-cursor.png"#"./quill-cursor.png"#g'
           find out/_next/static -type f -name '*.css' -print0 | xargs -0 sed -i \
             -e 's#url("/adjectivebloom/quill-cursor.png")#url("../../../quill-cursor.png")#g' \
@@ -47,7 +45,6 @@ jobs:
           test -f out/desk-background.webp
           test -f out/envelope-fern-closed-opt.webp
           test -f out/envelope-fern-open-opt.webp
-          test -f out/pressed-ferns.mp3
           test -f out/quill-cursor.png
           test "$(find out/photos-webp -maxdepth 1 -type f -name '*.webp' | wc -l)" -eq 14
           test "$(find out/growth-stages -maxdepth 1 -type f -name '*.webp' | wc -l)" -ge 9
